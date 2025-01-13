@@ -197,19 +197,29 @@ variable "instance_state" {
 
 1. **Test and Validate the Terraform Script:**
    - `terraform init`
+
      ![running terraform init](https://github.com/user-attachments/assets/cbb4bea4-e74f-4d0d-8b4e-64be50778ab3)
-   - `terraform validate`
+ 
+  - `terraform validate`
+
      ![image](https://github.com/user-attachments/assets/e4d8e549-aaa6-4f78-a910-658267f8aeb8)
+  
    - `terraform plan`
+
      ![image](https://github.com/user-attachments/assets/6a1e784e-0907-4124-86a0-e2ca2ff2d509)
+
    - `terraform apply`
+
      ![image](https://github.com/user-attachments/assets/1fcaa0a0-73f4-4423-bb17-052b599015d0)
 
 2. **Confirm Services Are Running:**
    - SSH into the server to check services.
    - To check Jenkins:
-     - Run `systemctl status jenkins`
-       ![image](https://github.com/user-attachments/assets/d610b308-e9c0-40bb-8b9b-b74b55bbb9a0)
+    
+ - Run `systemctl status jenkins`
+ 
+      ![image](https://github.com/user-attachments/assets/d610b308-e9c0-40bb-8b9b-b74b55bbb9a0)
+
    - To check Docker:
      - Run `systemctl status docker` and `docker ps` to see containers.
 
@@ -225,135 +235,27 @@ variable "instance_state" {
 
 
 2. Access the Jenkins instance to configure pipelines.
-3. Begin Helm chart creation for the sample web application.
-4. Integrate Helm into the Jenkins pipeline.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Configuration-Management-With-Helm
----
-In this  project, I will embark on a journey to introduce the basics of Helm charts and their integration with Jenkins. As a DevOps Engineer, my goal is to design and implement a simplified CI/CD pipeline using Jenkins, with a primary focus on Helm charts. The objective is to automate the deployment of a basic web application, promoting my understanding and hands-on experience as I explore the field.
----
-### Demonstration:
-
-Step-by-step demonstration of the CI/CD pipeline with Helm Integration.
-
-## Jenkins Server Setup
-
-### Objective: Configure Jenkins server for a CI/CD pipeline automation.
-
-**Steps:**
-
-1. Install Jenkins on a dedicated server (with detailed explanations)
-
-2. Set up necessary plugins (Git, Helm, etc.) with simple configurations.
-
-3. Configure Jenkins with basic security measures.
----
-
-# **Integrating Helm with Jenkins**
-
-In this project, I will be using Amazon Linux. You can find the official documentation for installing Jenkins on AWS here: [Tutorial for Installing Jenkins on AWS](https://www.jenkins.io/doc/tutorials/tutorial-for-installing-jenkins-on-AWS/).
-
----
-
-## **1. Jenkins Server Setup**
-
-### **Step 1: Install Jenkins on a Dedicated Server**
-
-#### **Prerequisites:**
-1. An Amazon Linux server instance.
-2. Java Development Kit (JDK) installed (Jenkins requires Java 11 or 17).
-
----
-
-#### **Instructions:**
-
-##### **1. Update the System Packages**
-Update the system to ensure all packages are up-to-date:
-```bash
-sudo yum update -y
-```
-
-##### **2. Install Java**
-Ensure Java is installed. If not, install OpenJDK:
-```bash
-sudo amazon-linux-extras enable java-openjdk11
-sudo yum install java-11-openjdk -y
-```
-Verify the installation:
-```bash
-java -version
-```
-
-##### **3. Add the Jenkins Repository**
-Add the official Jenkins repository:
-```bash
-sudo curl -fsSL https://pkg.jenkins.io/redhat-stable/jenkins.io.key | sudo tee /etc/pki/rpm-gpg/RPM-GPG-KEY-jenkins
-sudo sh -c 'echo "[jenkins]
-name=Jenkins-stable
-baseurl=https://pkg.jenkins.io/redhat-stable
-gpgcheck=1
-gpgkey=https://pkg.jenkins.io/redhat-stable/jenkins.io.key
-enabled=1" > /etc/yum.repos.d/jenkins.repo'
-```
-
-##### **4. Install Jenkins**
-Update the package list and install Jenkins:
-```bash
-sudo yum install jenkins -y
-```
-
-##### **5. Start and Enable Jenkins**
-Start the Jenkins service and ensure it starts on boot:
-```bash
-sudo systemctl start jenkins
-sudo systemctl enable jenkins
-```
-
-##### **6. Open Firewall for Jenkins**
-By default, Jenkins runs on port 8080. Allow it through the firewall:
-```bash
-sudo firewall-cmd --permanent --zone=public --add-port=8080/tcp
-sudo firewall-cmd --reload
-```
-
 ##### **7. Access Jenkins**
 1. Open your browser and navigate to `http://<server-ip>:8080`.
+
+![image](https://github.com/user-attachments/assets/01ccb67e-58ab-470e-8a81-afc8d5bf0d44)
+
+
 2. Obtain the initial admin password:
    ```bash
    sudo cat /var/lib/jenkins/secrets/initialAdminPassword
    ```
+![image](https://github.com/user-attachments/assets/38624c19-8d35-4793-817a-e4d9e049a181)
+
+
 3. Enter the password on the Jenkins setup page to proceed with the initial configuration.
 
 ##### **8. Complete Initial Setup**
 1. Choose "Install suggested plugins" on the plugin setup page.
+
+![image](https://github.com/user-attachments/assets/5b95c3ba-3dbd-4c0e-8ed2-dbbe7b3d57c0)
+
+
 2. Create an admin user and complete the setup wizard.
 
 ---
@@ -361,13 +263,24 @@ sudo firewall-cmd --reload
 ## **2. Installing Jenkins Plugins**
 
 Ensure the following Jenkins plugins are installed:
-
+click on manage jenkinsand select plugins. select available plugin under plugins
 - **Git Plugin**: For cloning repositories.
 - **Pipeline Plugin**: For creating Jenkins pipelines.
-- **Kubernetes CLI Plugin**: For running `kubectl` commands.
-- **Helm Plugin**: For executing Helm commands (optional, as CLI commands can also be used).
+- **Kubernetes Plugin**: For running `kubectl` commands
 
 Refer to Jenkins plugin documentation if needed.
+
+## Installing helm to our server Begin
+
+2. Helm chart creation for the sample web application.
+
+4. Integrate Helm into the Jenkins pipeline.
+
+
+
+
+
+
 
 ---
 
