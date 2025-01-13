@@ -414,43 +414,29 @@ git push
  
 
 
----
-## Integrate Helm into the Jenkins pipeline.
+## Integrating Helm into the Jenkins Pipeline
 
-## **4. Create Jenkins Pipeline**
+### **4. Create Jenkins Pipeline**
+Follow these steps to create a Jenkins job with Git integration:
+
+1. Open Jenkins and create a new pipeline job.
+2. Add your Git repository URL under the "Source Code Management" section.
+3. Configure the pipeline script as shown below:
 
 ### **Pipeline Script Overview**
-
-The Jenkins pipeline will:
-1. Clone the Helm chart repository.
-2. Run Helm commands to install or upgrade the release.
-
-### **Sample Jenkinsfile**
-
 ```groovy
-pipeline {
+
+  pipeline {
     agent any
-    environment {
-        KUBECONFIG_CREDENTIAL_ID = 'kubeconfig'
-    }
+
     stages {
-        stage('Clone Repository') {
+        stage('Checkout') {
             steps {
-                git 'https://github.com/your-username/your-helm-chart-repo.git'
-            }
-        }
-        stage('Helm Deployment') {
-            steps {
-                withCredentials([file(credentialsId: KUBECONFIG_CREDENTIAL_ID, variable: 'KUBECONFIG')]) {
-                    sh '''
-                    export KUBECONFIG=$KUBECONFIG
-                    helm upgrade --install my-release ./my-web-app \
-                      --set replicaCount=2,image.tag="1.23.1"
-                    '''
-                }
+                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/Fumnanya92/Configuration-Management-With-Helm.git']])
             }
         }
     }
+
     post {
         success {
             echo 'Deployment successful!'
@@ -460,7 +446,88 @@ pipeline {
         }
     }
 }
+
 ```
+The next step is to create your webhook
+
+The next step is connecting Kubernetes to Jenkins with config file
+Configure Jenkins Credentials:
+
+In Jenkins, go to Manage Jenkins > Manage Credentials.
+Add a new Secret Text credential:
+ID: kubeconfig
+Secret: Contents of your ~/.kube/config file. This file contains the configuration and credentials for kubectl to access your Minikube cluster.
+Configure Jenkins Pipeline:
+
+In your Jenkins pipeline script, ensure you have a stage that uses the kubectl command to deploy your application.
+
+```groovy
+pipeline {
+    agent any
+
+    environment {
+        KUBECONFIG_PATH = '/path/to/kubeconfig' // Specify a valid path
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/Fumnanya92/Configuration-Management-With-Helm.git']])
+            }
+        }
+
+        stage('Setup Kubeconfig') {
+            environment {
+                KUBECONFIG = credentials('jenkins-kubeconfig') // Ensure this matches the ID of the uploaded secret file
+            }
+            steps {
+                withCredentials([string(credentialsId: 'kubernetes', variable: 'KUBECONFIG_CONTENT')]) {
+                    sh '''
+                        # Write the kubeconfig content to a file
+                        echo "$KUBECONFIG_CONTENT" > $KUBECONFIG_PATH
+
+                        # Set secure permissions for the file
+                        chmod 600 $KUBECONFIG_PATH
+
+                        # Verify kubeconfig
+                        echo "Kubeconfig file created at: $KUBECONFIG_PATH"
+                    '''
+                }
+            }
+        }
+
+        stage('Run Kubectl Commands') {
+            steps {
+                withEnv(["KUBECONFIG=$KUBECONFIG_PATH"]) {
+                    sh '''
+                        # Check the cluster information
+                        kubectl cluster-info
+
+                        # List all pods in all namespaces
+                        kubectl get pods --all-namespaces
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy with Helm') {
+            steps {
+                script {
+                    sh '/usr/local/bin/helm upgrade --install my-webapp ./webapp --namespace default'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Deployment successful!'
+        }
+        failure {
+            echo 'Deployment failed.'
+        }
+    }
+}
 
 ---
 
