@@ -477,6 +477,8 @@ Follow these steps to create a Jenkins job with Git integration:
 
 5. **Save Webhook**:
    - Click **Add webhook** to save the configuration.
+![image](https://github.com/user-attachments/assets/add4ef43-3fec-425c-ae86-f542e2df8089)
+
 
 ---
 
@@ -484,12 +486,7 @@ Follow these steps to create a Jenkins job with Git integration:
 1. **Make a Change**:
    - Push a change to your GitHub repository (e.g., update the `README.md` file).
 
-2. **Check GitHub Webhook Delivery**:
-   - Go back to **Settings > Webhooks** in your repository.
-   - Click the newly added webhook.
-   - Check the **Recent Deliveries** section to ensure GitHub successfully sends the payload to Jenkins.
-
-3. **Verify Jenkins Trigger**:
+2. **Verify Jenkins Trigger**:
    - Open Jenkins.
    - Confirm that the pipeline job was triggered automatically by the webhook.
 
