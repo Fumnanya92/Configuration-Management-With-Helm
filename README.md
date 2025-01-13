@@ -1,3 +1,261 @@
+# Configuration Management With Helm
+
+## Overview
+
+This project focuses on introducing the fundamentals of Helm charts and their integration with Jenkins to design and implement a simplified CI/CD pipeline. The primary objective is to automate the deployment of a basic web application, enhancing hands-on experience and understanding of Helm charts and Jenkins in the DevOps domain.
+
+## Goals and Objectives
+
+1. **Introduce Helm Charts**: Understand the basics of Helm charts and their significance in Kubernetes-based deployments.
+2. **CI/CD Pipeline**: Design a pipeline using Jenkins that leverages Helm for deployment automation.
+3. **Hands-On Experience**: Gain practical knowledge by automating the deployment of a sample web application.
+
+## Project Approach
+
+The first step involves provisioning infrastructure for Jenkins using Terraform. To ensure consistency and automation, the Terraform configuration pre-installs essential resources such as Docker and Minikube on the server. Below are the Terraform configurations and scripts used in this phase:
+
+---
+
+## Terraform Configuration
+
+### Main Configuration (`main.tf`)
+```hcl
+terraform {
+  backend "s3" {
+    bucket         = "helm-terraform"
+    key            = "terraform/terraform.tfstate"
+    region         = "us-west-2"
+    dynamodb_table = "helm-terraform"
+    encrypt        = true
+  }
+}
+
+resource "tls_private_key" "helm" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}
+
+resource "aws_key_pair" "helm_keypair" {
+  key_name   = "helmkey"
+  public_key = tls_private_key.helm.public_key_openssh
+}
+
+resource "local_file" "tf_key" {
+  content  = tls_private_key.helm.private_key_pem
+  filename = "helmkey.pem"
+}
+
+resource "aws_eip" "helm_eip" {
+  domain = "vpc"
+}
+
+resource "aws_security_group" "helm_sg" {
+  name_prefix = "helm-sg"
+  description = "Security group for helm instances"
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "helm_instance" {
+  ami                         = "ami-066a7fbea5161f451"
+  instance_type               = "t2.medium"
+  key_name                    = aws_key_pair.helm_keypair.key_name
+  vpc_security_group_ids      = [aws_security_group.helm_sg.id]
+  associate_public_ip_address = true
+  user_data = file("${path.module}/userdata.sh")
+  tags = {
+    Name = "helm-instance2"
+  }
+}
+
+resource "aws_eip_association" "helm_eip_association" {
+  instance_id   = aws_instance.helm_instance.id
+  allocation_id = aws_eip.helm_eip.id
+}
+```
+
+### Outputs Configuration (`outputs.tf`)
+```hcl
+output "public_ip" {
+  value = aws_instance.helm_instance.public_ip
+}
+
+output "instance_public_dns" {
+  description = "Public DNS of the EC2 instance"
+  value       = aws_instance.helm_instance.public_dns
+}
+
+output "ssh_connection" {
+  description = "Example SSH command to connect to the instance"
+  value       = "ssh -i \"${local_file.tf_key.filename}\" ec2-user@${aws_instance.helm_instance.public_dns}"
+}
+```
+
+### Provider Configuration (`provider.tf`)
+```hcl
+provider "aws" {
+  region = "us-west-2"
+}
+```
+
+### User Data Script (`userdata.sh`)
+```bash
+#!/bin/bash
+
+sudo bash -c 'exec > >(tee /var/log/userdata.log | logger -t user-data) 2>&1'
+set -e
+
+if [ -f /etc/instance-setup-complete ]; then
+    echo "Setup already complete. Skipping."
+    exit 0
+fi
+
+sudo touch /etc/instance-setup-complete
+sudo yum update -y
+
+# Install Java and Jenkins
+if ! command -v java &> /dev/null; then
+    sudo dnf install java-17-amazon-corretto -y
+fi
+
+if ! command -v jenkins &> /dev/null; then
+    sudo wget -O /etc/yum.repos.d/jenkins.repo \
+    https://pkg.jenkins.io/redhat-stable/jenkins.repo
+    sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+    sudo yum upgrade
+    sudo yum install jenkins -y
+    sudo systemctl enable jenkins
+    sudo systemctl start jenkins
+fi
+
+# Install Docker
+if ! command -v docker &> /dev/null; then
+    sudo yum install -y docker
+    sudo systemctl enable docker
+    sudo systemctl start docker
+    sudo usermod -aG docker ec2-user
+fi
+
+# Install kubectl and Minikube
+if ! command -v kubectl &> /dev/null; then
+    curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.27.4/bin/linux/amd64/kubectl
+    sudo install kubectl /usr/local/bin/kubectl
+fi
+
+if ! command -v minikube &> /dev/null; then
+    curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+    sudo install minikube-linux-amd64 /usr/local/bin/minikube
+    minikube start
+fi
+
+echo "Setup complete!"
+```
+
+### Variables Configuration (`variables.tf`)
+```hcl
+variable "instance_state" {
+  description = "State of the helm instance"
+}
+```
+
+---
+
+### Next Steps
+
+1. **Test and Validate the Terraform Script:**
+   - `terraform init`
+     ![running terraform init](https://github.com/user-attachments/assets/cbb4bea4-e74f-4d0d-8b4e-64be50778ab3)
+   - `terraform validate`
+     ![image](https://github.com/user-attachments/assets/e4d8e549-aaa6-4f78-a910-658267f8aeb8)
+   - `terraform plan`
+     ![image](https://github.com/user-attachments/assets/6a1e784e-0907-4124-86a0-e2ca2ff2d509)
+   - `terraform apply`
+     ![image](https://github.com/user-attachments/assets/1fcaa0a0-73f4-4423-bb17-052b599015d0)
+
+2. **Confirm Services Are Running:**
+   - SSH into the server to check services.
+   - To check Jenkins:
+     - Run `systemctl status jenkins`
+       ![image](https://github.com/user-attachments/assets/d610b308-e9c0-40bb-8b9b-b74b55bbb9a0)
+   - To check Docker:
+     - Run `systemctl status docker` and `docker ps` to see containers.
+
+3. **Start Minikube:**
+   - Run `minikube start`.
+   - **Why Minikube?** Minikube is a lightweight Kubernetes implementation ideal for local development and testing. Other options for Kubernetes setups include:
+     - Kubernetes on cloud platforms (e.g., Amazon EKS, Google GKE, Azure AKS)
+     - Kind (Kubernetes in Docker)
+     - K3s (lightweight Kubernetes for production environments)
+   - Minikube was chosen for its simplicity and ease of use in this project.
+     ![image](https://github.com/user-attachments/assets/b66bf3f4-e7c7-437e-b0de-ffb9ec250847)
+
+
+
+2. Access the Jenkins instance to configure pipelines.
+3. Begin Helm chart creation for the sample web application.
+4. Integrate Helm into the Jenkins pipeline.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Configuration-Management-With-Helm
 ---
 In this  project, I will embark on a journey to introduce the basics of Helm charts and their integration with Jenkins. As a DevOps Engineer, my goal is to design and implement a simplified CI/CD pipeline using Jenkins, with a primary focus on Helm charts. The objective is to automate the deployment of a basic web application, promoting my understanding and hands-on experience as I explore the field.
