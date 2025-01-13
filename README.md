@@ -231,48 +231,187 @@ variable "instance_state" {
      - K3s (lightweight Kubernetes for production environments)
    - Minikube was chosen for its simplicity and ease of use in this project.
      ![image](https://github.com/user-attachments/assets/b66bf3f4-e7c7-437e-b0de-ffb9ec250847)
+---
 
+4. **Access the Jenkins Instance to Configure Pipelines:**
 
-
-2. Access the Jenkins instance to configure pipelines.
 ##### **7. Access Jenkins**
+
 1. Open your browser and navigate to `http://<server-ip>:8080`.
 
-![image](https://github.com/user-attachments/assets/01ccb67e-58ab-470e-8a81-afc8d5bf0d44)
-
+   ![image](https://github.com/user-attachments/assets/01ccb67e-58ab-470e-8a81-afc8d5bf0d44)
 
 2. Obtain the initial admin password:
    ```bash
    sudo cat /var/lib/jenkins/secrets/initialAdminPassword
    ```
-![image](https://github.com/user-attachments/assets/38624c19-8d35-4793-817a-e4d9e049a181)
-
+   ![image](https://github.com/user-attachments/assets/38624c19-8d35-4793-817a-e4d9e049a181)
 
 3. Enter the password on the Jenkins setup page to proceed with the initial configuration.
 
 ##### **8. Complete Initial Setup**
+
 1. Choose "Install suggested plugins" on the plugin setup page.
 
-![image](https://github.com/user-attachments/assets/5b95c3ba-3dbd-4c0e-8ed2-dbbe7b3d57c0)
-
+   ![image](https://github.com/user-attachments/assets/5b95c3ba-3dbd-4c0e-8ed2-dbbe7b3d57c0)
 
 2. Create an admin user and complete the setup wizard.
 
 ---
 
-## **2. Installing Jenkins Plugins**
+## **Installing Jenkins Plugins**
 
 Ensure the following Jenkins plugins are installed:
-click on manage jenkinsand select plugins. select available plugin under plugins
 - **Git Plugin**: For cloning repositories.
 - **Pipeline Plugin**: For creating Jenkins pipelines.
-- **Kubernetes Plugin**: For running `kubectl` commands
+- **Kubernetes Plugin**: For running `kubectl` commands.
+
+To install plugins:
+1. Click on "Manage Jenkins".
+2. Select "Plugins" and then "Available Plugins".
 
 Refer to Jenkins plugin documentation if needed.
 
-## Installing helm to our server Begin
+---
 
-2. Helm chart creation for the sample web application.
+## Installing Helm on the Server
+
+1. For Linux:
+   ```bash
+   curl -L https://get.helm.sh/helm-v3.5.0-linux-amd64.tar.gz -o helm.tar.gz
+   ```
+   ![image](https://github.com/user-attachments/assets/3f424122-f566-4df8-ac8d-8347a521e7a8)
+
+2. Extract the archive:
+   ```bash
+   tar -zxvf helm.tar.gz
+   ```
+
+3. Move the binary (use `sudo` if necessary):
+   ```bash
+   mv linux-amd64/helm /usr/local/bin/helm
+   ```
+   ![image](https://github.com/user-attachments/assets/da1f81a1-ac22-4c24-956a-b3f3e4826ba5)
+
+4. Verify the installation:
+   ```bash
+   helm version
+   ```
+
+5. Clean up:
+   ```bash
+   rm helm.tar.gz && rm -r *-amd64
+   ```
+
+---
+
+## Helm Chart Creation for the Sample Web Application
+
+1. Create a directory for the Helm chart:
+   ```bash
+   mkdir helm-web-app
+   cd helm-web-app
+   ```
+
+2. Create a new chart:
+   ```bash
+   helm create webapp
+   ```
+   ![image](https://github.com/user-attachments/assets/377d8d37-3a97-4ba4-bcbd-27cf0add0439)
+
+3. Initialize Git (if not already done):
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial Helm webapp chart"
+   ```
+
+4. Push to a remote repository:
+   ```bash
+   git remote add origin <REMOTE_REPOSITORY_URL>
+   git push -u origin master
+   ```
+## Running a Simple Web Application with Helm
+
+### Step 1: Modify `values.yaml`
+Edit the `values.yaml` file to define the desired configuration:
+
+```yaml
+replicaCount: 2
+
+image:
+  repository: nginx
+  tag: stable
+  pullPolicy: IfNotPresent
+```
+
+- **Explanation**: Setting `replicaCount` to 2 ensures two instances (replicas) of the application run simultaneously for better availability and scalability.
+
+Save the changes.
+
+### Step 2: Customize `templates/deployment.yaml`
+Open the `templates/deployment.yaml` file and make the following adjustments:
+
+1. Remove or comment out the following line:
+
+   ```yaml
+   {{- toYaml .Values.resources | nindent 12 }}
+   ```
+
+   ![image](https://github.com/user-attachments/assets/86aff9b4-16b2-4466-ad06-685a063b6686)
+
+2. Add a simple resource request and limit under `spec.template.spec.containers.resources` to manage Kubernetes resources efficiently:
+
+   ```yaml
+   resources:
+     requests:
+       memory: "128Mi"
+       cpu: "100m"
+     limits:
+       memory: "256Mi"
+       cpu: "200m"
+   ```
+
+   - **Explanation**: These configurations help Kubernetes allocate resources efficiently, ensuring that the application runs optimally without overloading the nodes.
+
+   ![image](https://github.com/user-attachments/assets/c46a9990-e686-4b05-98ad-18aacfd46270)
+
+### Step 3: Push Changes to Git Repository
+
+```bash
+git add .
+git commit -m "Customized Helm chart"
+git push
+```
+### **Deploy the Application**
+
+1. Use Helm to deploy the application:
+   ```bash
+   helm install my-webapp ./webapp
+   ```
+
+2. Check the deployment status:
+   ```bash
+   kubectl get deployments
+   ```
+
+3. Visit the application URL. To retrieve the application URL, execute the following commands:
+
+   ```bash
+   export POD_NAME=$(kubectl get pods --namespace default -l "app.kubernetes.io/name=webapp,app.kubernetes.io/instance=my-webapp" -o jsonpath="{.items[0].metadata.name}")
+
+   export CONTAINER_PORT=$(kubectl get pod --namespace default $POD_NAME -o jsonpath="{.spec.containers[0].ports[0].containerPort}")
+
+   kubectl --namespace default port-forward $POD_NAME 8081:$CONTAINER_PORT
+   ```
+
+4. Access your application by visiting:
+   ```
+   HTTP://127.0.0.1:8081
+   ```
+
+   ![image](https://github.com/user-attachments/assets/006fa63d-b657-4a00-b085-632b3614fb6c)
+ 
 
 4. Integrate Helm into the Jenkins pipeline.
 
