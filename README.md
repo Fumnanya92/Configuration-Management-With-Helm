@@ -413,44 +413,11 @@ git push
    ![image](https://github.com/user-attachments/assets/006fa63d-b657-4a00-b085-632b3614fb6c)
  
 
-4. Integrate Helm into the Jenkins pipeline.
-
-
-
-
-
-
 
 ---
+## Integrate Helm into the Jenkins pipeline.
 
-## **3. Configuring Jenkins for Kubernetes and Helm**
-
-### **Step 1: Set Up Kubernetes Credentials in Jenkins**
-
-1. Navigate to **Manage Jenkins > Credentials > System > Global credentials**.
-2. Add a new credential:
-   - **Kind**: Kubernetes configuration (kubeconfig).
-   - **Scope**: Global.
-   - **ID**: `kubeconfig` (or any name you'll use in the pipeline).
-   - **File**: Upload your kubeconfig file.
-
-### **Step 2: Verify Helm Availability in Jenkins**
-
-Ensure Helm is accessible in Jenkins pipelines:
-
-```bash
-helm version
-```
-
-If Helm is not installed, install it on the Jenkins server:
-
-```bash
-curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-```
-
----
-
-## **4. Creating the Jenkins Pipeline**
+## **4. Create Jenkins Pipeline**
 
 ### **Pipeline Script Overview**
 
@@ -558,6 +525,30 @@ When you're done, uninstall the Helm release to remove the deployment:
 
 ```bash
 helm uninstall my-release
+```
+## **3. Configuring Jenkins for Kubernetes and Helm**
+
+### **Step 1: Set Up Kubernetes Credentials in Jenkins**
+
+1. Navigate to **Manage Jenkins > Credentials > System > Global credentials**.
+2. Add a new credential:
+   - **Kind**: Kubernetes configuration (kubeconfig).
+   - **Scope**: Global.
+   - **ID**: `kubeconfig` (or any name you'll use in the pipeline).
+   - **File**: Upload your kubeconfig file.
+
+### **Step 2: Verify Helm Availability in Jenkins**
+
+Ensure Helm is accessible in Jenkins pipelines:
+
+```bash
+helm version
+```
+
+If Helm is not installed, install it on the Jenkins server:
+
+```bash
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 ```
 
 ---
