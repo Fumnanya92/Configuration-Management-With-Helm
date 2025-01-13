@@ -448,7 +448,52 @@ Follow these steps to create a Jenkins job with Git integration:
 }
 
 ```
-The next step is to create your webhook
+## The next step is to create your webhook
+
+### Creating a Webhook for Jenkins Integration
+#### **Step 1: Add a Webhook to Your GitHub Repository**
+1. **Log in to GitHub**:
+   - Navigate to your repository.
+
+2. **Go to Repository Settings**:
+   - Click the **Settings** tab in your GitHub repository.
+
+3. **Navigate to Webhooks**:
+   - On the left sidebar, select **Webhooks**.
+   - Click **Add webhook**.
+
+4. **Set up the webhook**:
+   - **Payload URL**:
+     Enter your Jenkins GitHub webhook endpoint. For example:
+     ```
+     http://44.242.22.27:8080/github-webhook/
+     ```
+   - **Content Type**:
+     Choose `application/json`.
+   - **Secret**:
+     (Optional) Add a secret for additional security. This will need to match the secret configured in Jenkins.
+   - **Events**:
+     Select **Just the push event** or any other events relevant to your pipeline.
+
+5. **Save Webhook**:
+   - Click **Add webhook** to save the configuration.
+
+---
+
+#### **Step 2: Test the Webhook**
+1. **Make a Change**:
+   - Push a change to your GitHub repository (e.g., update the `README.md` file).
+
+2. **Check GitHub Webhook Delivery**:
+   - Go back to **Settings > Webhooks** in your repository.
+   - Click the newly added webhook.
+   - Check the **Recent Deliveries** section to ensure GitHub successfully sends the payload to Jenkins.
+
+3. **Verify Jenkins Trigger**:
+   - Open Jenkins.
+   - Confirm that the pipeline job was triggered automatically by the webhook.
+
+  ---
 
 The next step is connecting Kubernetes to Jenkins with config file
 Configure Jenkins Credentials:
