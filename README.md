@@ -493,6 +493,15 @@ Follow these steps to create a Jenkins job with Git integration:
   ---
 
 The next step is connecting Kubernetes to Jenkins with config file
+got to your terminal 
+create a ca.crt file copy content from  /home/ec2-user/.minikube/ca.crt into ca.crt
+create a client.crt file copy content from /home/ec2-user/.minikube/profiles/minikube/client.crt into client.crt
+create a client.key file copy content from /home/ec2-user/.minikube/profiles/minikube/client.key into client.key
+
+covert the text format in each of the the files (ca.crt, client.crt, client.key )with base64 you can also use base64 -w 0; echo 
+create a config file and copy the content from ~/.kube/config into the config file created 
+sample![image](https://github.com/user-attachments/assets/32b0f644-4386-4f18-94bc-6d5d882452b2)
+
 Configure Jenkins Credentials:
 
 In Jenkins, go to Manage Jenkins > Manage Credentials.
@@ -570,6 +579,8 @@ pipeline {
         }
     }
 }
+
+https://youtu.be/fodA9rM5xoo
 
 ---
 
