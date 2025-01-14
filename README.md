@@ -492,30 +492,48 @@ Follow these steps to create a Jenkins job with Git integration:
 
   ---
 
-The next step is connecting Kubernetes to Jenkins with config file
-got to your terminal 
-create a ca.crt file copy content from  /home/ec2-user/.minikube/ca.crt into ca.crt
-create a client.crt file copy content from /home/ec2-user/.minikube/profiles/minikube/client.crt into client.crt
-create a client.key file copy content from /home/ec2-user/.minikube/profiles/minikube/client.key into client.key
+## Connecting Kubernetes to Jenkins with Config File
 
-covert the text format in each of the the files (ca.crt, client.crt, client.key )with base64 you can also use base64 -w 0; echo 
-create a config file and copy the content from ~/.kube/config into the config file created 
-sample![image](https://github.com/user-attachments/assets/32b0f644-4386-4f18-94bc-6d5d882452b2)
+### Step 1: Prepare the Kubernetes Config Files
+1. Open your terminal and create the required files:
+   - **Create `ca.crt`**:
+     ```bash
+     cp /home/ec2-user/.minikube/ca.crt ./ca.crt
+     ```
+   - **Create `client.crt`**:
+     ```bash
+     cp /home/ec2-user/.minikube/profiles/minikube/client.crt ./client.crt
+     ```
+   - **Create `client.key`**:
+     ```bash
+     cp /home/ec2-user/.minikube/profiles/minikube/client.key ./client.key
+     ```
 
-Configure Jenkins Credentials:
+2. Convert the text content of each file to base64 format:
+   ```bash
+   base64 -w 0 ./ca.crt > ca.base64
+   base64 -w 0 ./client.crt > client.base64
+   base64 -w 0 ./client.key > client.base64
+   ```
 
-In Jenkins, go to Manage Jenkins > Manage Credentials.
-Add a new Secret Text credential:
-ID: kubeconfig
-Secret: Contents of your updated ~/.kube/config file. This file contains the configuration and credentials for kubectl to access your Minikube cluster.
-![image](https://github.com/user-attachments/assets/21a690a9-fd41-4a4f-8841-5e19b3a2a771)
+### Step 2: Create the Kubernetes Config File
+1. Copy the content of `~/.kube/config` into a new file named `config`.
+2. Update the config file to include the base64-encoded values for `ca.crt`, `client.crt`, and `client.key`.
 
-reference video: https://youtu.be/fodA9rM5xoo
+### Step 3: Configure Jenkins Credentials
+1. **Access Jenkins Credentials**:
+   - Go to **Manage Jenkins > Manage Credentials**.
+2. **Add a New Secret Text Credential**:
+   - **ID**: `kubeconfig`
+   - **Secret**: Paste the contents of your updated `config` file.
+3. Save the credential.
 
-Configure Jenkins Pipeline:
+---
 
-In your Jenkins pipeline script, ensure you have a stage that uses the kubectl command to deploy your application.
+## Configuring Jenkins Pipeline for Kubernetes Deployment
 
+### Sample Pipeline Script
+```groovy
 pipeline {
     agent any
     
@@ -530,8 +548,7 @@ pipeline {
             }
         }
     
-
-         stage('Deploy with Helm') {
+        stage('Deploy with Helm') {
             steps {
                 withCredentials([file(credentialsId: 'kubeconfigupdated', variable: 'KUBECONFIG')]) {
                     dir('helm-web-app/webapp') {
@@ -552,8 +569,6 @@ pipeline {
     }
 }
 
-
-
 <img width="952" alt="image" src="https://github.com/user-attachments/assets/f8980b15-b781-49c0-9ab5-6d090f3a9ce8" />
 
 
@@ -562,12 +577,7 @@ pipeline {
 ---
 
 ## **5. Running the Pipeline**
-
-1. Add the pipeline to Jenkins:
-   - Create a new Jenkins job and select **Pipeline**.
-   - Paste the pipeline script or link the **Jenkinsfile** from a Git repository.
-
-2. Run the pipeline:
+1. Run the pipeline:
    - Trigger a build and monitor the console output.
 
 ---
@@ -616,36 +626,3 @@ helm rollback my-release <revision>
 
 ---
 
-## **8. Clean Up Resources**
-
-When you're done, uninstall the Helm release to remove the deployment:
-
-```bash
-helm uninstall my-release
-```
-## **3. Configuring Jenkins for Kubernetes and Helm**
-
-### **Step 1: Set Up Kubernetes Credentials in Jenkins**
-
-1. Navigate to **Manage Jenkins > Credentials > System > Global credentials**.
-2. Add a new credential:
-   - **Kind**: Kubernetes configuration (kubeconfig).
-   - **Scope**: Global.
-   - **ID**: `kubeconfig` (or any name you'll use in the pipeline).
-   - **File**: Upload your kubeconfig file.
-
-### **Step 2: Verify Helm Availability in Jenkins**
-
-Ensure Helm is accessible in Jenkins pipelines:
-
-```bash
-helm version
-```
-
-If Helm is not installed, install it on the Jenkins server:
-
-```bash
-curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
-```
-
----
