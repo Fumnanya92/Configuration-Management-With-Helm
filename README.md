@@ -510,56 +510,27 @@ ID: kubeconfig
 Secret: Contents of your ~/.kube/config file. This file contains the configuration and credentials for kubectl to access your Minikube cluster.
 ![image](https://github.com/user-attachments/assets/21a690a9-fd41-4a4f-8841-5e19b3a2a771)
 
+reference video: https://youtu.be/fodA9rM5xoo
+
 Configure Jenkins Pipeline:
 
 In your Jenkins pipeline script, ensure you have a stage that uses the kubectl command to deploy your application.
 
-```groovy
 pipeline {
     agent any
 
     environment {
-        KUBECONFIG_PATH = '/path/to/kubeconfig' // Specify a valid path
+        KUBECONFIG = credentials('jenkins-config') // Ensure this matches the ID of the uploaded secret file
     }
 
     stages {
         stage('Checkout') {
             steps {
-                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/Fumnanya92/Configuration-Management-With-Helm.git']])
-            }
-        }
-
-        stage('Setup Kubeconfig') {
-            environment {
-                KUBECONFIG = credentials('jenkins-kubeconfig') // Ensure this matches the ID of the uploaded secret file
-            }
-            steps {
-                withCredentials([string(credentialsId: 'kubernetes', variable: 'KUBECONFIG_CONTENT')]) {
-                    sh '''
-                        # Write the kubeconfig content to a file
-                        echo "$KUBECONFIG_CONTENT" > $KUBECONFIG_PATH
-
-                        # Set secure permissions for the file
-                        chmod 600 $KUBECONFIG_PATH
-
-                        # Verify kubeconfig
-                        echo "Kubeconfig file created at: $KUBECONFIG_PATH"
-                    '''
-                }
-            }
-        }
-
-        stage('Run Kubectl Commands') {
-            steps {
-                withEnv(["KUBECONFIG=$KUBECONFIG_PATH"]) {
-                    sh '''
-                        # Check the cluster information
-                        kubectl cluster-info
-
-                        # List all pods in all namespaces
-                        kubectl get pods --all-namespaces
-                    '''
-                }
+                checkout scmGit(
+                    branches: [[name: '*/main']],
+                    extensions: [],
+                    userRemoteConfigs: [[url: 'https://github.com/Fumnanya92/Configuration-Management-With-Helm.git']]
+                )
             }
         }
 
@@ -582,7 +553,11 @@ pipeline {
     }
 }
 
-https://youtu.be/fodA9rM5xoo
+
+<img width="952" alt="image" src="https://github.com/user-attachments/assets/f8980b15-b781-49c0-9ab5-6d090f3a9ce8" />
+
+
+
 
 ---
 
