@@ -507,7 +507,7 @@ Configure Jenkins Credentials:
 In Jenkins, go to Manage Jenkins > Manage Credentials.
 Add a new Secret Text credential:
 ID: kubeconfig
-Secret: Contents of your ~/.kube/config file. This file contains the configuration and credentials for kubectl to access your Minikube cluster.
+Secret: Contents of your updated ~/.kube/config file. This file contains the configuration and credentials for kubectl to access your Minikube cluster.
 ![image](https://github.com/user-attachments/assets/21a690a9-fd41-4a4f-8841-5e19b3a2a771)
 
 reference video: https://youtu.be/fodA9rM5xoo
@@ -518,26 +518,25 @@ In your Jenkins pipeline script, ensure you have a stage that uses the kubectl c
 
 pipeline {
     agent any
-
+    
     environment {
-        KUBECONFIG = credentials('jenkins-config') // Ensure this matches the ID of the uploaded secret file
+        KUBECONFIG = credentials('kubeconfigupdated') // Ensure this matches the ID of the uploaded secret file
     }
 
     stages {
         stage('Checkout') {
             steps {
-                checkout scmGit(
-                    branches: [[name: '*/main']],
-                    extensions: [],
-                    userRemoteConfigs: [[url: 'https://github.com/Fumnanya92/Configuration-Management-With-Helm.git']]
-                )
+                checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/Fumnanya92/Configuration-Management-With-Helm.git']])
             }
         }
+    
 
-        stage('Deploy with Helm') {
+         stage('Deploy with Helm') {
             steps {
-                script {
-                    sh '/usr/local/bin/helm upgrade --install my-webapp ./webapp --namespace default'
+                withCredentials([file(credentialsId: 'kubeconfigupdated', variable: 'KUBECONFIG')]) {
+                    dir('helm-web-app/webapp') {
+                        sh '/usr/local/bin/helm upgrade --install my-webapp . --namespace default'
+                    }
                 }
             }
         }
@@ -552,6 +551,7 @@ pipeline {
         }
     }
 }
+
 
 
 <img width="952" alt="image" src="https://github.com/user-attachments/assets/f8980b15-b781-49c0-9ab5-6d090f3a9ce8" />
