@@ -508,6 +508,8 @@ In Jenkins, go to Manage Jenkins > Manage Credentials.
 Add a new Secret Text credential:
 ID: kubeconfig
 Secret: Contents of your ~/.kube/config file. This file contains the configuration and credentials for kubectl to access your Minikube cluster.
+![image](https://github.com/user-attachments/assets/21a690a9-fd41-4a4f-8841-5e19b3a2a771)
+
 Configure Jenkins Pipeline:
 
 In your Jenkins pipeline script, ensure you have a stage that uses the kubectl command to deploy your application.
